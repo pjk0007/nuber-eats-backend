@@ -1,9 +1,28 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  Int,
+  Context,
+  InputType,
+} from '@nestjs/graphql';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
 import { CreateUserInput, CreateUserOutput } from './dto/create-user.input';
 import { UpdateUserInput } from './dto/update-user.input';
 import { LoginInput, LoginOutput } from 'src/users/dto/login.dto';
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from 'src/auth/auth.guard';
+import { AuthUser } from 'src/auth/auth-user.decorator';
+import {
+  UserProfileInput,
+  UserProfileOutput,
+} from 'src/users/dto/user-profile.dto';
+import {
+  EditProfileInput,
+  EditProfileOutput,
+} from 'src/users/dto/edit-profile.dto';
 
 @Resolver(() => User)
 export class UsersResolver {
@@ -24,34 +43,61 @@ export class UsersResolver {
   }
 
   @Mutation(() => LoginOutput)
-  async login(@Args('input') loginInput:LoginInput):Promise<LoginOutput>{
+  async login(@Args('input') loginInput: LoginInput): Promise<LoginOutput> {
     try {
       return this.usersService.login(loginInput);
     } catch (error) {
       return {
-        ok:false,
+        ok: false,
         error,
-      }
+      };
     }
   }
 
-  @Query(() => [User], { name: 'users' })
-  findAll() {
-    return this.usersService.findAll();
+  @Query(() => User)
+  @UseGuards(AuthGuard)
+  me(@AuthUser() authUser: User) {
+    return authUser;
   }
 
-  @Query(() => User, { name: 'user' })
-  findOne(@Args('id', { type: () => Int }) id: number) {
-    return this.usersService.findOne(id);
+  @Query(() => UserProfileOutput)
+  @UseGuards(AuthGuard)
+  async user(
+    @Args() userProfileInput: UserProfileInput,
+  ): Promise<UserProfileOutput> {
+    try {
+      const user = await this.usersService.findById(userProfileInput.userId);
+      if (!user) {
+        throw Error();
+      }
+      return {
+        ok: Boolean(user),
+        user,
+      };
+    } catch (error) {
+      return {
+        error: 'User Not Found',
+        ok: false,
+      };
+    }
   }
 
-  @Mutation(() => User)
-  updateUser(@Args('updateUserInput') updateUserInput: UpdateUserInput) {
-    return this.usersService.update(updateUserInput.id, updateUserInput);
-  }
-
-  @Mutation(() => User)
-  removeUser(@Args('id', { type: () => Int }) id: number) {
-    return this.usersService.remove(id);
+  @UseGuards(AuthGuard)
+  @Mutation(() => EditProfileOutput)
+  async editProfile(
+    @AuthUser() authUser: User,
+    @Args('input') editProfileInput: EditProfileInput,
+  ): Promise<EditProfileOutput> {
+    try {
+      await this.usersService.editProfile(authUser.id, editProfileInput);
+      return {
+        ok: true,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error,
+      };
+    }
   }
 }

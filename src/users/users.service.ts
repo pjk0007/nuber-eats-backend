@@ -2,14 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LoginInput } from 'src/users/dto/login.dto';
 import { User } from 'src/users/entities/user.entity';
-import { Repository } from 'typeorm';
+import { Repository, UpdateResult } from 'typeorm';
 import { CreateUserInput } from './dto/create-user.input';
 import { UpdateUserInput } from './dto/update-user.input';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from 'src/jwt/jwt.service';
+import { EditProfileInput } from 'src/users/dto/edit-profile.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
+    private readonly config:ConfigService,
+    private readonly jwtService:JwtService
   ) {}
 
   async create({
@@ -49,10 +54,16 @@ export class UsersService {
         };
       }
       const passwordCorrect = await user.checkPassword(password);
+      if(!passwordCorrect){
+        return {
+          ok:false,
+          error:'User not found'
+        }
+      }
+      const token = this.jwtService.sign(user.id)
       return {
-        ok: passwordCorrect,
-        error: passwordCorrect ? null : 'Wrong Password',
-        token: passwordCorrect ? 'asdfas' : null,
+        ok: true,
+        token
       };
     } catch (error) {
       return {
@@ -62,19 +73,20 @@ export class UsersService {
     }
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findById(id:number):Promise<User>{
+    return this.users.findOne({where:{id}});
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async editProfile(userId:number, {email, password}:EditProfileInput):Promise<User>{
+    // return this.users.update(userId, {...editProfileInput}) // 이러면 @BeforeUpdate 작동 안함
+    const user = await this.users.findOne({where:{id:userId}});
+    if(email){
+      user.email = email
+    }
+    if(password){
+      user.password = password
+    }
+    return this.users.save(user);
   }
 
-  update(id: number, updateUserInput: UpdateUserInput) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
-  }
 }
