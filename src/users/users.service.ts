@@ -4,8 +4,6 @@ import { LoginInput, LoginOutput } from 'src/users/dto/login.dto';
 import { User } from 'src/users/entities/user.entity';
 import { Repository, UpdateResult } from 'typeorm';
 import { CreateUserInput, CreateUserOutput } from './dto/create-user.input';
-import { UpdateUserInput } from './dto/update-user.input';
-import { ConfigService } from '@nestjs/config';
 import { JwtService } from 'src/jwt/jwt.service';
 import {
   EditProfileInput,
@@ -41,12 +39,12 @@ export class UsersService {
       const user = await this.users.save(
         this.users.create({ email, password, role }),
       );
-      const verification= await this.verifications.save(
+      const verification = await this.verifications.save(
         this.verifications.create({
           user,
         }),
       );
-      this.mailService.sendVerificationEmail(user.email, verification.code)
+      this.mailService.sendVerificationEmail(user.email, verification.code);
       return { ok: true };
     } catch (error) {
       // make error
@@ -92,10 +90,8 @@ export class UsersService {
 
   async findById(id: number): Promise<UserProfileOutput> {
     try {
-      const user = await this.users.findOne({ where: { id } });
-      if (user) {
-        return { ok: true, user: user };
-      }
+      const user = await this.users.findOneOrFail({ where: { id } });
+      return { ok: true, user: user };
     } catch (error) {
       return { ok: false, error: 'User Not Found' };
     }
@@ -111,16 +107,18 @@ export class UsersService {
       if (email) {
         user.email = email;
         user.verified = false;
-        const verification = await this.verifications.save(this.verifications.create({ user }));
-        this.mailService.sendVerificationEmail(user.email, verification.code)
+        const verification = await this.verifications.save(
+          this.verifications.create({ user }),
+        );
+        this.mailService.sendVerificationEmail(user.email, verification.code);
       }
       if (password) {
         user.password = password;
       }
       await this.users.save(user);
-      return{
-        ok:true,
-      }
+      return {
+        ok: true,
+      };
     } catch (error) {
       return { ok: false, error: 'Could not update profile.' };
     }
@@ -135,12 +133,12 @@ export class UsersService {
       if (verification) {
         verification.user.verified = true;
         await this.users.save(verification.user);
-        await this.verifications.delete(verification.id)
+        await this.verifications.delete(verification.id);
         return { ok: true };
       }
       return { ok: false, error: 'Verification not found.' };
     } catch (error) {
-      return { ok: false, error };
+      return { ok: false, error:"Could not verified email" };
     }
   }
 }
