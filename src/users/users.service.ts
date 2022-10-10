@@ -105,8 +105,17 @@ export class UsersService {
     try {
       const user = await this.users.findOne({ where: { id: userId } });
       if (email) {
+        const countedUser = await this.users.count({ where: { email } });
+        if (countedUser){
+          return {
+            ok: false,
+            error: 'There is a user with that email already',
+          };
+        }
+        
         user.email = email;
         user.verified = false;
+        await this.verifications.delete({ user: { id: user.id } });
         const verification = await this.verifications.save(
           this.verifications.create({ user }),
         );
@@ -138,7 +147,7 @@ export class UsersService {
       }
       return { ok: false, error: 'Verification not found.' };
     } catch (error) {
-      return { ok: false, error:"Could not verified email" };
+      return { ok: false, error: 'Could not verified email' };
     }
   }
 }
