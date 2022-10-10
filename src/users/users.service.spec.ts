@@ -180,7 +180,6 @@ describe('UsersService', () => {
 
       expect(jwtService.sign).toHaveBeenCalledTimes(1);
       expect(jwtService.sign).toHaveBeenCalledWith(mockedUser.id);
-      console.log(result);
       expect(result).toEqual({ ok: true, token: 'signed-token' });
     });
 
