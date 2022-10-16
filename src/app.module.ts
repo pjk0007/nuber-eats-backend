@@ -17,6 +17,9 @@ import { JwtMiddleware } from 'src/jwt/jwt.middleware';
 import { AuthModule } from './auth/auth.module';
 import { Verification } from 'src/users/entities/verification.entity';
 import { MailModule } from './mail/mail.module';
+import { RestaurantsModule } from 'src/restaurants/restaurants.module';
+import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
+import { Category } from 'src/restaurants/entities/category.entity';
 
 @Module({
   imports: [
@@ -45,15 +48,15 @@ import { MailModule } from './mail/mail.module';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       synchronize: process.env.NODE_ENV !== 'prod',
-      logging: process.env.NODE_ENV !== 'prod' && process.env.NODE_ENV !== 'test',
-      entities: [User, Verification],
+      logging:
+        process.env.NODE_ENV !== 'prod' && process.env.NODE_ENV !== 'test',
+      entities: [User, Verification, Restaurant, Category],
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,
       context: ({ req }) => ({ user: req['user'] }),
     }),
-    UsersModule,
     JwtModule.forRoot({
       privateKey: process.env.PRIVATE_KEY,
     }),
@@ -62,6 +65,9 @@ import { MailModule } from './mail/mail.module';
       domain: process.env.MAILGUN_DOMAIN_NAME,
       fromEmail: process.env.MAILGUN_FROM_EMAIL,
     }),
+    AuthModule,
+    UsersModule,
+    RestaurantsModule,
   ],
   controllers: [],
   providers: [],
