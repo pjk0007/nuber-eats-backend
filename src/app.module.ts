@@ -20,6 +20,10 @@ import { MailModule } from './mail/mail.module';
 import { RestaurantsModule } from 'src/restaurants/restaurants.module';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 import { Category } from 'src/restaurants/entities/category.entity';
+import { Dish } from 'src/restaurants/entities/dish.entity';
+import { OrdersModule } from './orders/orders.module';
+import { Order } from 'src/orders/entities/order.entity';
+import { OrderItem } from 'src/orders/entities/order-item.entity';
 
 @Module({
   imports: [
@@ -50,7 +54,7 @@ import { Category } from 'src/restaurants/entities/category.entity';
       synchronize: process.env.NODE_ENV !== 'prod',
       logging:
         process.env.NODE_ENV !== 'prod' && process.env.NODE_ENV !== 'test',
-      entities: [User, Verification, Restaurant, Category],
+      entities: [User, Verification, Restaurant, Category, Dish, Order, OrderItem],
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
@@ -68,6 +72,7 @@ import { Category } from 'src/restaurants/entities/category.entity';
     AuthModule,
     UsersModule,
     RestaurantsModule,
+    OrdersModule,
   ],
   controllers: [],
   providers: [],
